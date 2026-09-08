@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+  }
+}
+
+/* A4横向き印刷用の最適化スタイル */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm 6mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 印刷対象外の要素を確実に非表示 */
+  .no-print,
+  header,
+  button,
+  footer,
+  .modal-backdrop,
+  dialog,
+  .fixed {
+    display: none !important;
+  }
+
+  /* カレンダーテーブルが1ページに収まるよう高さを調整 */
+  .print-page-container {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* 印刷用テーブル罫線 */
+  .border-slate-300,
+  .border-slate-200 {
+    border-color: #334155 !important;
+  }
+}

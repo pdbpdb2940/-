@@ -1,0 +1,6 @@
+{
+  "name": "早出シフト表＋業務予定カレンダー",
+  "description": "Googleアカウント連携対応の早出シフト・施設業務予定管理カレンダー",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

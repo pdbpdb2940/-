@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 早出シフト: AIスタジオ開発プレビュー・公開版の両環境で即時反映・双方向リアルタイム同期を保証
+    match /shifts/{shiftId} {
+      allow read, write: if true;
+    }
+
+    // 業務予定: 誰でも閲覧・登録・編集・削除可能
+    match /tasks/{taskId} {
+      allow read, write: if true;
+    }
+
+    // 職員名簿: 誰でも閲覧・変更可能
+    match /staff/{staffId} {
+      allow read, write: if true;
+    }
+
+    // システム設定・月別申し送りメモ: 誰でも閲覧・更新可能
+    match /configs/{configId} {
+      allow read, write: if true;
+    }
+
+    // ユーザー別表示姓設定: 誰でも閲覧・更新可能
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // 監査ログ: 誰でも閲覧・記録可能、改ざん防止のため更新・削除は不可
+    match /audit_logs/{logId} {
+      allow read, create: if true;
+      allow update, delete: if false;
+    }
+  }
+}
+

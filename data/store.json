@@ -1,0 +1,341 @@
+{
+  "shifts": [
+    {
+      "id": "shift-batch-1788734866472-0-fh29y",
+      "date": "2026-09-07",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866472
+    },
+    {
+      "id": "shift-batch-1788734937638-0-v1say",
+      "date": "2026-09-07",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734937638
+    },
+    {
+      "id": "shift-batch-1788734866472-1-medtv",
+      "date": "2026-09-08",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866473
+    },
+    {
+      "id": "shift-batch-1788734937638-1-58p5y",
+      "date": "2026-09-08",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734937639
+    },
+    {
+      "id": "shift-batch-1788734866472-2-gtwbd",
+      "date": "2026-09-09",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866474
+    },
+    {
+      "id": "shift-batch-1788734937638-2-k1gti",
+      "date": "2026-09-09",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734937640
+    },
+    {
+      "id": "shift-batch-1788734866472-3-4od6r",
+      "date": "2026-09-10",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866475
+    },
+    {
+      "id": "shift-batch-1788734937638-3-xn64i",
+      "date": "2026-09-10",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734937641
+    },
+    {
+      "id": "shift-batch-1788734866472-4-t8por",
+      "date": "2026-09-11",
+      "staffName": "神谷",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdAt": 1788734866476
+    },
+    {
+      "id": "shift-batch-1788734937638-4-pc3yd",
+      "date": "2026-09-11",
+      "staffName": "紙谷",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdAt": 1788734937642
+    },
+    {
+      "id": "shift-batch-1788734866472-5-9877k",
+      "date": "2026-09-14",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866477
+    },
+    {
+      "id": "shift-batch-1788734937638-5-9xe26",
+      "date": "2026-09-14",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734937643
+    },
+    {
+      "id": "shift-batch-1788734866472-6-izkzz",
+      "date": "2026-09-15",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866478
+    },
+    {
+      "id": "shift-batch-1788734994456-0-vamv9",
+      "date": "2026-09-15",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994456
+    },
+    {
+      "id": "sample-4",
+      "date": "2026-09-16",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788483781291
+    },
+    {
+      "id": "shift-batch-1788734866472-7-8ymtc",
+      "date": "2026-09-16",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866479
+    },
+    {
+      "id": "shift-batch-1788734994456-1-548pn",
+      "date": "2026-09-16",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994457
+    },
+    {
+      "id": "shift-batch-1788734866472-8-fbpzo",
+      "date": "2026-09-17",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866480
+    },
+    {
+      "id": "shift-batch-1788734994456-2-g27uy",
+      "date": "2026-09-17",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994458
+    },
+    {
+      "id": "shift-batch-1788734866472-9-ges6w",
+      "date": "2026-09-18",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734866481
+    },
+    {
+      "id": "shift-batch-1788734994456-3-jmhu4",
+      "date": "2026-09-18",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994459
+    },
+    {
+      "id": "shift-batch-1788735091477-0-1ti45",
+      "date": "2026-09-24",
+      "staffName": "中野",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdAt": 1788735091477
+    },
+    {
+      "id": "shift-batch-1788735132521-0-szghw",
+      "date": "2026-09-24",
+      "staffName": "石過",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdAt": 1788735132521
+    },
+    {
+      "id": "shift-1788735178574-lxak7",
+      "date": "2026-09-24",
+      "staffName": "紙谷",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdAt": 1788735178574
+    },
+    {
+      "id": "shift-batch-1788735091477-1-kvwh3",
+      "date": "2026-09-25",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788735091478
+    },
+    {
+      "id": "shift-1788735213645-cnigl",
+      "date": "2026-09-25",
+      "staffName": "紙谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788735213645
+    },
+    {
+      "id": "shift-batch-1788734994456-4-e7d2c",
+      "date": "2026-09-28",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994460
+    },
+    {
+      "id": "shift-batch-1788735809251-0-apm5n",
+      "date": "2026-09-28",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788735809251
+    },
+    {
+      "id": "shift-batch-1788734994456-5-x5sd5",
+      "date": "2026-09-29",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994461
+    },
+    {
+      "id": "shift-batch-1788735809251-1-mv4ns",
+      "date": "2026-09-29",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788735809252
+    },
+    {
+      "id": "shift-batch-1788734994456-6-xd02t",
+      "date": "2026-09-30",
+      "staffName": "中野",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788734994462
+    },
+    {
+      "id": "shift-batch-1788735809251-2-d6glp",
+      "date": "2026-09-30",
+      "staffName": "神谷",
+      "startTime": "07:30",
+      "endTime": "16:15",
+      "note": "",
+      "createdAt": 1788735809253
+    },
+    {
+      "id": "shift-1788740624538-9n91e",
+      "date": "2026-09-11",
+      "staffName": "中野",
+      "startTime": "06:30",
+      "endTime": "15:15",
+      "note": "",
+      "createdByUid": "CTy6kYUQPrfLHjgfLXt3D0UnG9p2",
+      "createdByName": "紙谷",
+      "createdAt": 1788740624538,
+      "updatedAt": 1788740624538
+    }
+  ],
+  "staffList": [
+    {
+      "id": "staff-1",
+      "name": "神谷",
+      "colorBg": "bg-emerald-50",
+      "colorText": "text-emerald-900",
+      "colorBorder": "border-emerald-300"
+    },
+    {
+      "id": "staff-2",
+      "name": "紙谷",
+      "colorBg": "bg-indigo-50",
+      "colorText": "text-indigo-900",
+      "colorBorder": "border-indigo-300"
+    },
+    {
+      "id": "staff-3",
+      "name": "中野",
+      "colorBg": "bg-amber-50",
+      "colorText": "text-amber-900",
+      "colorBorder": "border-amber-300"
+    },
+    {
+      "id": "staff-1788735109092",
+      "name": "石過",
+      "colorBg": "bg-rose-50",
+      "colorText": "text-rose-900",
+      "colorBorder": "border-rose-300"
+    }
+  ],
+  "tasks": [],
+  "notes": {
+    "facility_shift_note_2026_09": "【早出業務連絡・注意事項】\n・出勤時刻は 07:30 　※大雨・積雪時は状況に応じて時間変更\n・外周道路及び駐車場のブロワー清掃時は時間変更\n・状況に応じて変更の可能性あり"
+  },
+  "adminPin": "7322",
+  "auditLogs": [],
+  "updatedAt": 1788821372861
+}

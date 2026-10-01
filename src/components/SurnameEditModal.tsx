@@ -8,7 +8,7 @@ interface SurnameEditModalProps {
 }
 
 export const SurnameEditModal: React.FC<SurnameEditModalProps> = ({ isOpen, onClose }) => {
-  const { user, surname, updateSurname } = useAuth();
+  const { surname, updateSurname } = useAuth();
   const [inputSurname, setInputSurname] = useState(surname);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -18,7 +18,7 @@ export const SurnameEditModal: React.FC<SurnameEditModalProps> = ({ isOpen, onCl
     }
   }, [isOpen, surname]);
 
-  if (!isOpen || !user) return null;
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +55,7 @@ export const SurnameEditModal: React.FC<SurnameEditModalProps> = ({ isOpen, onCl
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
             <p className="text-xs text-slate-600 mb-2 leading-relaxed">
-              カレンダー上に記録・表示される「登録者」の苗字です。Googleアカウント名から自動取得されていますが、必要に応じて修正できます。
+              カレンダー上に記録・表示される「登録者」の苗字です。必要に応じて変更できます。
             </p>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               あなたの苗字（姓）
@@ -73,10 +73,7 @@ export const SurnameEditModal: React.FC<SurnameEditModalProps> = ({ isOpen, onCl
 
           <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11px] text-slate-500 space-y-1">
             <div>
-              ・Google名: <span className="font-semibold text-slate-700">{user.displayName || '未設定'}</span>
-            </div>
-            <div>
-              ※ カレンダーにはフルネームやメールアドレスは公開されず、この苗字のみが記録・使用されます。
+              ※ カレンダーや登録履歴にはこの苗字のみが記録・使用されます。
             </div>
           </div>
 

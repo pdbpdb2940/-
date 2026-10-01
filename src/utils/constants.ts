@@ -52,5 +52,28 @@ export const STAFF_COLOR_PALETTES = [
 export const STORAGE_KEY_SHIFTS = 'shifttable_records_v1';
 export const STORAGE_KEY_STAFF = 'shifttable_staff_v1';
 
-// 曜日表示用（月曜日始まり）
-export const WEEK_DAYS_JA = ['月', '火', '水', '木', '金', '土', '日'] as const;
+// 曜日表示用（日曜始まり: 0=日 〜 6=土）日本の一般的なカレンダー標準
+export const WEEK_DAYS_JA_SUN = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+// 曜日表示用（月曜日始まり: 0=月 〜 6=日）
+export const WEEK_DAYS_JA_MON = ['月', '火', '水', '木', '金', '土', '日'] as const;
+
+// 曜日表示用（既存参照との互換性）
+export const WEEK_DAYS_JA = WEEK_DAYS_JA_SUN;
+
+// 標準曜日配列（Date.getDay() 準拠: 0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土）
+export const DAY_OF_WEEK_JA = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+/**
+ * 開始曜日（日曜または月曜）に応じたカレンダーヘッダー配列を取得
+ */
+export function getWeekDaysHeader(startOfWeek: 'sun' | 'mon' = 'sun'): readonly string[] {
+  return startOfWeek === 'sun' ? WEEK_DAYS_JA_SUN : WEEK_DAYS_JA_MON;
+}
+
+/**
+ * Date.getDay() (0=日 〜 6=土) から正しい曜日名を取得
+ */
+export function getDayOfWeekLabel(dayOfWeek: number): string {
+  return DAY_OF_WEEK_JA[dayOfWeek % 7] || '';
+}

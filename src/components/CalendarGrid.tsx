@@ -1,23 +1,27 @@
 import React, { useState, useMemo } from 'react';
-import { CalendarDay, StaffMember, TaskSchedule } from '../types';
-import { WEEK_DAYS_JA } from '../utils/constants';
+import { CalendarDay, ShiftRecord, StaffMember, TaskSchedule } from '../types';
+import { getWeekDaysHeader } from '../utils/constants';
 import {
   computeWeekShiftBars,
   computeWeekTracks,
   WeekShiftBar,
 } from '../utils/shiftContinuity';
-import { Plus, Link2 } from 'lucide-react';
+import { Plus, Link2, Users, Calendar } from 'lucide-react';
 
 interface CalendarGridProps {
   days: CalendarDay[];
   currentYear: number;
   currentMonth: number;
   staffList: StaffMember[];
+  startOfWeek?: 'sun' | 'mon';
+  onToggleStartOfWeek?: () => void;
   mergeConsecutive?: boolean;
   onToggleMergeConsecutive?: () => void;
   onSelectDay: (day: CalendarDay) => void;
+  onSelectShift?: (shift: ShiftRecord, day: CalendarDay) => void;
   onAddShiftToDay: (day: CalendarDay, e: React.MouseEvent) => void;
   onSelectTask?: (task: TaskSchedule, day: CalendarDay) => void;
+  onOpenStaffManage?: () => void;
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = ({
@@ -25,11 +29,15 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   currentYear,
   currentMonth,
   staffList,
+  startOfWeek = 'sun',
+  onToggleStartOfWeek,
   mergeConsecutive: controlledMergeConsecutive,
   onToggleMergeConsecutive,
   onSelectDay,
+  onSelectShift,
   onAddShiftToDay,
   onSelectTask,
+  onOpenStaffManage,
 }) => {
   // 連続シフトを結合して帯状に表示するかどうかのトグル（親からの制御または内部state）
   const [internalMergeConsecutive, setInternalMergeConsecutive] = useState<boolean>(true);
@@ -75,7 +83,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     };
   };
 
-  // 連結インジケーター（バー）をクリックした際、クリック位置に応じた日付を特定して選択
+  // 連結インジケーター（バー）をクリックした際、クリック位置に応じた日付と対象シフトを特定して選択
   const handleBarClick = (
     bar: WeekShiftBar,
     weekDays: CalendarDay[],
@@ -86,7 +94,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     const ratio = Math.max(0, Math.min(0.999, (e.clientX - rect.left) / rect.width));
     const offset = Math.floor(ratio * bar.span);
     const clickedDay = weekDays[bar.startCol + offset] || bar.targetDay;
-    onSelectDay(clickedDay);
+    const clickedShift = clickedDay.shifts.find((s) => s.staffName === bar.staffName) || bar.shifts[0];
+
+    if (onSelectShift && clickedShift) {
+      onSelectShift(clickedShift, clickedDay);
+    } else {
+      onSelectDay(clickedDay);
+    }
   };
 
   return (
@@ -105,14 +119,36 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
       {/* カレンダー上部ツールバー（通常画面のみ） */}
       <div className="flex items-center justify-between pb-2 px-1 print:hidden flex-wrap gap-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span>
-            <span>日付マスをクリックして登録・編集できます</span>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* 職員クリック・設定用チップリスト */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500">職員:</span>
+            {staffList.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={onOpenStaffManage}
+                className={`px-2 py-0.5 rounded text-xs font-bold border transition-colors cursor-pointer ${s.colorBg} ${s.colorText} ${s.colorBorder} hover:brightness-95 hover:shadow-2xs`}
+                title={`${s.name}（クリックで職員設定・色変更を開く）`}
+              >
+                {s.name}
+              </button>
+            ))}
+            {onOpenStaffManage && (
+              <button
+                type="button"
+                onClick={onOpenStaffManage}
+                className="inline-flex items-center gap-0.5 text-xs text-blue-600 hover:text-blue-800 font-medium px-1.5 py-0.5 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                title="職員の追加・編集・色設定を開く"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>職員設定</span>
+              </button>
+            )}
           </div>
 
           {/* 視覚的凡例 */}
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-600">
+          <div className="hidden md:flex items-center gap-1.5 text-[11px] text-slate-600 border-l border-slate-200 pl-3">
             <span className="font-semibold text-slate-400">凡例:</span>
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
@@ -133,37 +169,52 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
           </div>
         </div>
 
-        {/* 連続シフト結合トグルボタン */}
-        <button
-          type="button"
-          onClick={handleToggleMerge}
-          className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-md border font-semibold transition-all cursor-pointer ${
-            mergeConsecutive
-              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-              : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-          }`}
-          title="同一職員の連続した早出勤務を帯状に連結・結合して表示します"
-        >
-          <Link2 className="w-3.5 h-3.5" />
-          <span>連続シフト結合: {mergeConsecutive ? 'ON' : 'OFF'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* 週開始曜日切り替えボタン（日曜始まり ⇄ 月曜始まり） */}
+          {onToggleStartOfWeek && (
+            <button
+              type="button"
+              onClick={onToggleStartOfWeek}
+              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border font-semibold bg-white text-slate-700 border-slate-300 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
+              title="カレンダーの週の開始を日曜または月曜に切り替えます"
+            >
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span>{startOfWeek === 'sun' ? '日曜始まり' : '月曜始まり'}</span>
+            </button>
+          )}
+
+          {/* 連続シフト結合トグルボタン */}
+          <button
+            type="button"
+            onClick={handleToggleMerge}
+            className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-md border font-semibold transition-all cursor-pointer ${
+              mergeConsecutive
+                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+            title="同一職員の連続した早出勤務を帯状に連結・結合して表示します"
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            <span>連続シフト結合: {mergeConsecutive ? 'ON' : 'OFF'}</span>
+          </button>
+        </div>
       </div>
 
       {/* カレンダーテーブル全体コンテナ */}
       <div className="bg-white rounded-lg border border-slate-300 shadow-xs overflow-hidden print:border-black print:rounded-none print:shadow-none flex-1 flex flex-col">
-        {/* 曜日ヘッダー（月～日） */}
+        {/* 曜日ヘッダー */}
         <div className="grid grid-cols-7 border-b border-slate-300 print:border-black bg-slate-100 print:bg-white text-center font-bold text-sm sm:text-base select-none">
-          {WEEK_DAYS_JA.map((dayName, idx) => {
-            const isSat = idx === 5;
-            const isSun = idx === 6;
+          {getWeekDaysHeader(startOfWeek).map((dayName, idx) => {
+            const isSun = startOfWeek === 'sun' ? idx === 0 : idx === 6;
+            const isSat = startOfWeek === 'sun' ? idx === 6 : idx === 5;
             return (
               <div
-                key={dayName}
+                key={`${dayName}-${idx}`}
                 className={`py-2 sm:py-2.5 border-r last:border-r-0 border-slate-300 print:border-black ${
-                  isSat
-                    ? 'bg-blue-100/70 text-blue-800 print:text-blue-900 print:bg-blue-50'
-                    : isSun
+                  isSun
                     ? 'bg-rose-100/70 text-rose-800 print:text-rose-900 print:bg-rose-50'
+                    : isSat
+                    ? 'bg-blue-100/70 text-blue-800 print:text-blue-900 print:bg-blue-50'
                     : 'text-slate-800'
                 }`}
               >
@@ -190,7 +241,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
             return (
               <div
                 key={`week-${weekIdx}`}
-                className="relative flex-1 min-h-[105px] sm:min-h-[120px] flex flex-col"
+                className="relative flex-1 min-h-[125px] sm:min-h-[145px] flex flex-col"
               >
                 {/* 1. 背景グリッド（7日分の縦枠線と背景色） */}
                 <div className="absolute inset-0 grid grid-cols-7 pointer-events-none">

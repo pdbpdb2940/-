@@ -236,3 +236,29 @@ export function saveMonthNoteToStorage(year: number, month: number, note: string
   // クラウドFirestoreへ永続化
   saveNoteToCloud(key, note).catch(err => console.warn('Firestore note save error:', err));
 }
+
+export const STORAGE_KEY_START_OF_WEEK = 'shifttable_start_of_week';
+
+/**
+ * カレンダーの週開始曜日（'sun' | 'mon'）を取得（初期値は日曜始まり）
+ */
+export function loadStartOfWeekFromStorage(): 'sun' | 'mon' {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_START_OF_WEEK);
+    if (saved === 'mon') return 'mon';
+    return 'sun'; // 日本の標準カレンダー＝日曜始まり
+  } catch {
+    return 'sun';
+  }
+}
+
+/**
+ * カレンダーの週開始曜日（'sun' | 'mon'）を保存
+ */
+export function saveStartOfWeekToStorage(startOfWeek: 'sun' | 'mon'): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_START_OF_WEEK, startOfWeek);
+  } catch (err) {
+    console.error('週開始曜日の保存に失敗しました:', err);
+  }
+}

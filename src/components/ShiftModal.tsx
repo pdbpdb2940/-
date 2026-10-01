@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CalendarDay, ShiftRecord, StaffMember, TaskSchedule, AbsenceType } from '../types';
 import { DEFAULT_SHIFT_START, DEFAULT_SHIFT_END } from '../utils/constants';
 import { getShiftStreakInfo } from '../utils/shiftContinuity';
@@ -14,7 +14,8 @@ import {
   Calendar as CalendarIcon,
   Briefcase,
   UserCheck,
-  Lock,
+  Check,
+  Users,
 } from 'lucide-react';
 
 interface ShiftModalProps {
@@ -23,15 +24,18 @@ interface ShiftModalProps {
   shifts: ShiftRecord[];
   tasks?: TaskSchedule[];
   initialTab?: 'shift' | 'task';
+  editingShiftItem?: ShiftRecord | null;
   editingTaskItem?: TaskSchedule | null;
   isOpen: boolean;
   isAdminMode?: boolean;
   onClose: () => void;
   onSaveShift: (shift: ShiftRecord) => void;
+  onSaveMultipleShifts?: (shifts: ShiftRecord[]) => void;
   onDeleteShift: (shiftId: string) => void;
   onDeleteMultipleShifts?: (shiftIds: string[]) => void;
   onSaveTask?: (task: TaskSchedule) => void;
   onDeleteTask?: (taskId: string) => void;
+  onOpenStaffManage?: () => void;
 }
 
 export const ShiftModal: React.FC<ShiftModalProps> = ({
@@ -40,19 +44,22 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   shifts,
   tasks = [],
   initialTab = 'shift',
+  editingShiftItem = null,
   editingTaskItem = null,
   isOpen,
   isAdminMode = false,
   onClose,
   onSaveShift,
+  onSaveMultipleShifts,
   onDeleteShift,
   onDeleteMultipleShifts,
   onSaveTask,
   onDeleteTask,
+  onOpenStaffManage,
 }) => {
-  const { user, surname, loginWithGoogle, isAuthReady } = useAuth();
-  const canEdit = !!user || isAdminMode;
-  const currentDisplayName = surname || (isAdminMode ? '管理者' : '利用者');
+  const { surname } = useAuth();
+  const canEdit = true;
+  const currentDisplayName = isAdminMode ? '管理者' : (surname || '担当者');
 
   // 現在のタブ ('shift': 早出シフト, 'task': 業務予定)
   const [activeTab, setActiveTab] = useState<'shift' | 'task'>('shift');
@@ -71,6 +78,12 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   const [absenceType, setAbsenceType] = useState<AbsenceType>('休み');
   const [isAllDayAbsence, setIsAllDayAbsence] = useState<boolean>(true);
 
+  // 連続シフトの一括時刻変更
+  const [updateStreakShifts, setUpdateStreakShifts] = useState<boolean>(true);
+  // 新規登録時の複数職員同時選択
+  const [multiStaffMode, setMultiStaffMode] = useState<boolean>(false);
+  const [selectedMultiStaffNames, setSelectedMultiStaffNames] = useState<Set<string>>(new Set());
+
   // 業務予定編集状態
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [confirmDeleteTaskId, setConfirmDeleteTaskId] = useState<string | null>(null);
@@ -80,27 +93,22 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   const [taskNote, setTaskNote] = useState<string>('');
   const [taskErrorMessage, setTaskErrorMessage] = useState<string>('');
 
-  // 初期化
-  useEffect(() => {
-    if (isOpen) {
-      setActiveTab(initialTab);
-      resetShiftForm();
-      resetTaskForm();
+  // 現在編集中のシフトと連続勤務/不在情報（フックは常に先頭で無条件に呼び出す）
+  const editingShift = useMemo(() => {
+    if (!editingShiftId || !day) return null;
+    return day.shifts.find((s) => s.id === editingShiftId) || null;
+  }, [editingShiftId, day]);
 
-      if (editingTaskItem) {
-        setActiveTab('task');
-        handleStartEditTask(editingTaskItem);
-      }
-    }
-  }, [isOpen, day?.dateString, initialTab, editingTaskItem]);
-
-  if (!isOpen || !day) return null;
+  const editingStreak = useMemo(() => {
+    if (!editingShift) return null;
+    return getShiftStreakInfo(editingShift, shifts);
+  }, [editingShift, shifts]);
 
   // 早出フォームリセット
-  const resetShiftForm = () => {
+  const resetShiftForm = (fallbackStaffName?: string) => {
     setEditingShiftId(null);
     setConfirmDeleteShiftId(null);
-    setSelectedStaff(staffList[0]?.name || '神谷');
+    setSelectedStaff(fallbackStaffName || editingShiftItem?.staffName || staffList[0]?.name || '神谷');
     setStartTime(DEFAULT_SHIFT_START);
     setEndTime(DEFAULT_SHIFT_END);
     setNote('');
@@ -108,6 +116,9 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     setAbsenceType('休み');
     setIsAllDayAbsence(true);
     setShiftErrorMessage('');
+    setMultiStaffMode(false);
+    setSelectedMultiStaffNames(new Set());
+    setUpdateStreakShifts(true);
   };
 
   // 業務予定フォームリセット
@@ -126,6 +137,8 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     setEditingShiftId(shift.id);
     setConfirmDeleteShiftId(null);
     setSelectedStaff(shift.staffName);
+    setMultiStaffMode(false);
+    setUpdateStreakShifts(true);
     const hasAbsence = Boolean(shift.isAbsence);
     setIsAbsence(hasAbsence);
     setAbsenceType(shift.absenceType || '休み');
@@ -156,14 +169,36 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     setTaskErrorMessage('');
   };
 
+  // 初期化
+  useEffect(() => {
+    if (isOpen && day) {
+      setActiveTab(initialTab);
+      resetShiftForm();
+      resetTaskForm();
+
+      if (editingShiftItem) {
+        setActiveTab('shift');
+        handleStartEditShift(editingShiftItem);
+      } else if (editingTaskItem) {
+        setActiveTab('task');
+        handleStartEditTask(editingTaskItem);
+      }
+    }
+  }, [isOpen, day?.dateString, initialTab, editingShiftItem, editingTaskItem]);
+
+  // モーダルが非表示の場合は描画しない（すべてのReactフック実行後に早期リターン）
+  if (!isOpen || !day) return null;
+
   // 早出・不在シフト保存
   const handleSaveShift = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit) {
-      alert('登録するにはGoogleアカウントでログインするか、管理者としてログインしてください。');
-      return;
-    }
-    if (!selectedStaff) {
+
+    if (multiStaffMode && !editingShiftId) {
+      if (selectedMultiStaffNames.size === 0) {
+        setShiftErrorMessage('担当職員を1名以上選択してください。');
+        return;
+      }
+    } else if (!selectedStaff) {
       setShiftErrorMessage('担当職員を選択してください。');
       return;
     }
@@ -179,11 +214,71 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     }
 
     const existingShift = day.shifts.find((s) => s.id === editingShiftId);
-    const authorUid = user?.uid || (isAdminMode ? 'admin' : 'local-user');
-    const authorName = surname || (isAdminMode ? '管理者' : selectedStaff);
+    const authorUid = isAdminMode ? 'admin' : 'local-user';
+    const authorName = isAdminMode ? '管理者' : (surname || selectedStaff);
 
     const finalStartTime = isAbsence ? (isAllDayAbsence ? '終日' : startTime) : startTime;
     const finalEndTime = isAbsence ? (isAllDayAbsence ? '' : endTime) : endTime;
+
+    // 連続シフトの編集時：「連続全日もまとめて変更する」が有効な場合
+    if (
+      editingShift &&
+      editingStreak?.isStreak &&
+      updateStreakShifts &&
+      editingStreak.streakShiftIds.length > 1
+    ) {
+      const streakIdSet = new Set(editingStreak.streakShiftIds);
+      const streakShifts = shifts.filter((s) => streakIdSet.has(s.id));
+
+      const updatedStreakShifts: ShiftRecord[] = streakShifts.map((s) => ({
+        ...s,
+        staffName: selectedStaff,
+        startTime: finalStartTime,
+        endTime: finalEndTime,
+        note: note.trim(),
+        isAbsence: isAbsence,
+        absenceType: isAbsence ? absenceType : undefined,
+        isCustomEdited: true,
+        updatedByUid: authorUid,
+        updatedByName: authorName,
+        updatedAt: Date.now(),
+      }));
+
+      if (onSaveMultipleShifts) {
+        onSaveMultipleShifts(updatedStreakShifts);
+      } else {
+        updatedStreakShifts.forEach((s) => onSaveShift(s));
+      }
+      resetShiftForm();
+      return;
+    }
+
+    // 新規登録時の複数職員一括登録モード
+    if (!editingShiftId && multiStaffMode && selectedMultiStaffNames.size > 0) {
+      const newShifts: ShiftRecord[] = Array.from(selectedMultiStaffNames).map((staffName) => ({
+        id: `shift-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        date: day.dateString,
+        staffName,
+        startTime: finalStartTime,
+        endTime: finalEndTime,
+        note: note.trim(),
+        isAbsence: isAbsence,
+        absenceType: isAbsence ? absenceType : undefined,
+        isCustomEdited: true,
+        createdByUid: authorUid,
+        createdByName: authorName,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }));
+
+      if (onSaveMultipleShifts) {
+        onSaveMultipleShifts(newShifts);
+      } else {
+        newShifts.forEach((s) => onSaveShift(s));
+      }
+      resetShiftForm();
+      return;
+    }
 
     const shiftData: ShiftRecord = {
       id: editingShiftId || `shift-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -194,6 +289,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
       note: note.trim(),
       isAbsence: isAbsence,
       absenceType: isAbsence ? absenceType : undefined,
+      isCustomEdited: true,
       createdByUid: existingShift?.createdByUid || authorUid,
       createdByName: existingShift?.createdByName || authorName,
       updatedByUid: existingShift ? authorUid : undefined,
@@ -209,10 +305,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
   // 業務予定保存（予定時刻・担当職員は任意設定可能）
   const handleSaveTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit) {
-      alert('登録するにはGoogleアカウントでログインするか、管理者としてログインしてください。');
-      return;
-    }
+
     if (!taskTitle.trim()) {
       setTaskErrorMessage('業務名を入力してください（例: 芝刈り、オープンキャンパス、施設点検など）。');
       return;
@@ -220,8 +313,8 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
 
     const currentDayTasks = day.tasks || [];
     const existingTask = currentDayTasks.find((t) => t.id === editingTaskId);
-    const authorUid = user?.uid || (isAdminMode ? 'admin' : 'local-user');
-    const authorName = surname || (isAdminMode ? '管理者' : (taskStaff.trim() || '登録者'));
+    const authorUid = isAdminMode ? 'admin' : 'local-user';
+    const authorName = isAdminMode ? '管理者' : (surname || (taskStaff.trim() || '担当者'));
 
     const taskData: TaskSchedule = {
       id: editingTaskId || `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -244,11 +337,16 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
     resetTaskForm();
   };
 
-  // 日付表示
-  const dateObj = new Date(day.dateString + 'T00:00:00');
-  const monthStr = dateObj.getMonth() + 1;
-  const dayStr = dateObj.getDate();
-  const dayOfWeekJa = ['日', '月', '火', '水', '木', '金', '土'][dateObj.getDay()];
+  // 日付表示（文字列から安全に分解し、Date.getDay()に基づく正確な曜日と色を表示）
+  const [yearNum, monthNum, dayNum] = day.dateString.split('-').map(Number);
+  const dayDate =
+    day.date instanceof Date && !isNaN(day.date.getTime())
+      ? day.date
+      : new Date(yearNum, monthNum - 1, dayNum);
+  const dayOfWeekIdx = dayDate.getDay();
+  const dayOfWeekJa = ['日', '月', '火', '水', '木', '金', '土'][dayOfWeekIdx];
+  const isSunOrHoliday = dayOfWeekIdx === 0 || Boolean(day.holidayName);
+  const isSat = dayOfWeekIdx === 6;
 
   const dayTasks = day.tasks || [];
 
@@ -260,7 +358,18 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2">
               <span>
-                {monthStr}月{dayStr}日 ({dayOfWeekJa})
+                {monthNum}月{dayNum}日
+              </span>
+              <span
+                className={`font-extrabold ${
+                  isSunOrHoliday
+                    ? 'text-rose-400'
+                    : isSat
+                    ? 'text-blue-400'
+                    : 'text-slate-300'
+                }`}
+              >
+                ({dayOfWeekJa})
               </span>
               {day.holidayName && (
                 <span className="text-xs bg-rose-500/80 text-white px-2 py-0.5 rounded-full font-normal">
@@ -321,7 +430,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                   {editingShiftId && (
                     <button
                       type="button"
-                      onClick={resetShiftForm}
+                      onClick={() => resetShiftForm()}
                       className="text-xs text-blue-600 hover:underline flex items-center gap-0.5 font-medium cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" /> 新規追加に戻る
@@ -342,7 +451,9 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                       return (
                         <div
                           key={shift.id}
-                          className={`p-3 rounded-lg border transition-all ${
+                          onClick={() => handleStartEditShift(shift)}
+                          title="クリックしてこのシフト・担当者を編集"
+                          className={`p-3 rounded-lg border transition-all cursor-pointer ${
                             isBeingEdited
                               ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-300 ring-offset-1'
                               : shift.isAbsence
@@ -449,10 +560,13 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
 
                             {/* 編集・削除ボタン（ログイン時または管理者モード時利用可能） */}
                             {canEdit && confirmDeleteShiftId !== shift.id && (
-                              <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
-                                  onClick={() => handleStartEditShift(shift)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEditShift(shift);
+                                  }}
                                   className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-white rounded-md border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
                                   title="修正・編集"
                                 >
@@ -460,7 +574,10 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setConfirmDeleteShiftId(shift.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteShiftId(shift.id);
+                                  }}
                                   className="p-1.5 text-slate-600 hover:text-rose-600 hover:bg-white rounded-md border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
                                   title="削除"
                                 >
@@ -523,34 +640,8 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                 )}
               </div>
 
-              {/* 未ログイン案内 または 入力フォーム */}
-              {!isAuthReady ? (
-                <div className="border-t border-slate-200 pt-4 bg-slate-50 p-6 rounded-lg text-center space-y-2">
-                  <div className="text-xs font-semibold text-slate-500 animate-pulse">
-                    ログイン認証状態を確認中...
-                  </div>
-                </div>
-              ) : !canEdit ? (
-                <div className="border-t border-slate-200 pt-4 bg-slate-50 p-4 rounded-lg text-center space-y-2.5">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <div className="text-xs font-bold text-slate-800">
-                    シフトの登録・編集にはログインが必要です
-                  </div>
-                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                    カレンダーの閲覧は可能ですが、登録・変更・削除を行うにはGoogleアカウントでログインするか、右上の管理者からログインしてください。
-                  </p>
-                  <button
-                    type="button"
-                    onClick={loginWithGoogle}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
-                  >
-                    <span>Googleアカウントでログイン</span>
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSaveShift} className="border-t border-slate-200 pt-4 space-y-3.5">
+              {/* シフト入力フォーム */}
+              <form onSubmit={handleSaveShift} className="border-t border-slate-200 pt-4 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">
                       {editingShiftId
@@ -575,28 +666,142 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
 
                   {/* 担当職員選択 */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      対象職員 <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                      {staffList.map((staff) => {
-                        const isSelected = selectedStaff === staff.name;
-                        return (
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                      <div className="flex items-center gap-2">
+                        <label className="block text-xs font-semibold text-slate-700">
+                          対象職員 <span className="text-rose-500">*</span>
+                        </label>
+                        {onOpenStaffManage && (
                           <button
-                            key={staff.id}
                             type="button"
-                            onClick={() => setSelectedStaff(staff.name)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
-                              isSelected
-                                ? `${staff.colorBg} ${staff.colorText} ${staff.colorBorder} ring-2 ring-blue-400 shadow-2xs`
-                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                            }`}
+                            onClick={onOpenStaffManage}
+                            className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer"
+                            title="職員名簿の確認・追加・色設定"
                           >
-                            {staff.name}
+                            <Users className="w-3 h-3" />
+                            <span>職員名簿・設定</span>
                           </button>
-                        );
-                      })}
+                        )}
+                      </div>
+                      {!editingShiftId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = !multiStaffMode;
+                            setMultiStaffMode(next);
+                            if (next) {
+                              setSelectedMultiStaffNames(new Set([selectedStaff]));
+                            }
+                          }}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>{multiStaffMode ? '単一職員の選択に戻す' : '複数の職員をまとめて選択'}</span>
+                        </button>
+                      )}
                     </div>
+
+                    {!multiStaffMode ? (
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                        {staffList.map((staff) => {
+                          const isSelected = selectedStaff === staff.name;
+                          return (
+                            <button
+                              key={staff.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedStaff(staff.name);
+                                const existingForStaff = day.shifts.find((s) => s.staffName === staff.name);
+                                if (existingForStaff) {
+                                  handleStartEditShift(existingForStaff);
+                                } else {
+                                  // 該当職員の新規シフト設定に切り替え
+                                  setEditingShiftId(null);
+                                  setConfirmDeleteShiftId(null);
+                                  setStartTime(DEFAULT_SHIFT_START);
+                                  setEndTime(DEFAULT_SHIFT_END);
+                                  setIsAbsence(false);
+                                  setAbsenceType('休み');
+                                  setIsAllDayAbsence(true);
+                                  setNote('');
+                                  setShiftErrorMessage('');
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
+                                isSelected
+                                  ? `${staff.colorBg} ${staff.colorText} ${staff.colorBorder} ring-2 ring-blue-400 shadow-2xs`
+                                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                              }`}
+                            >
+                              {staff.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 mb-2.5 p-2 bg-blue-50/50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-blue-900">
+                            同時登録する職員を選択（複数選択可）:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMultiStaffNames(new Set(staffList.map((s) => s.name)))}
+                              className="text-[10.5px] text-blue-700 hover:underline cursor-pointer"
+                            >
+                              全員選択
+                            </button>
+                            <span className="text-slate-300">|</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMultiStaffNames(new Set())}
+                              className="text-[10.5px] text-slate-500 hover:underline cursor-pointer"
+                            >
+                              解除
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {staffList.map((staff) => {
+                            const isChecked = selectedMultiStaffNames.has(staff.name);
+                            return (
+                              <button
+                                key={staff.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMultiStaffNames((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(staff.name)) next.delete(staff.name);
+                                    else next.add(staff.name);
+                                    return next;
+                                  });
+                                }}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
+                                  isChecked
+                                    ? `${staff.colorBg} ${staff.colorText} ${staff.colorBorder} ring-2 ring-blue-500 shadow-2xs`
+                                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                <div
+                                  className={`w-3.5 h-3.5 rounded-xs flex items-center justify-center border ${
+                                    isChecked
+                                      ? 'bg-blue-600 border-blue-600 text-white'
+                                      : 'border-slate-400 bg-white'
+                                  }`}
+                                >
+                                  {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </div>
+                                <span>{staff.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="text-[10.5px] text-blue-700 font-semibold pt-0.5">
+                          ✓ 選択中: {selectedMultiStaffNames.size}名（この日のシフトが一括で作成されます）
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 休み・出張などの不在設定チェックボックス */}
@@ -803,6 +1008,33 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                     />
                   </div>
 
+                  {/* 連続シフトの時刻一括変更オプション */}
+                  {editingShiftId && editingStreak?.isStreak && (
+                    <div className="p-3 bg-blue-50/90 border border-blue-200 rounded-lg text-xs text-blue-900">
+                      <label className="flex items-start gap-2.5 cursor-pointer font-bold select-none">
+                        <input
+                          type="checkbox"
+                          checked={updateStreakShifts}
+                          onChange={(e) => setUpdateStreakShifts(e.target.checked)}
+                          className="w-4 h-4 mt-0.5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600 shrink-0"
+                        />
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-1.5 py-0.2 bg-blue-200/80 text-blue-800 rounded text-[10px]">
+                              {editingStreak.totalDays}日間連続
+                            </span>
+                            <span>
+                              この連続する{editingStreak.totalDays}日間（{editingStreak.startDate.substring(5)}～{editingStreak.endDate.substring(5)}）の勤務時刻もまとめて変更する
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-normal text-blue-700">
+                            ※ チェックを付けたまま保存すると、この職員の連続する全日程（{editingStreak.streakShiftIds.length}日分）の時刻と備考が一括で更新されます。
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
                   {/* アクションボタン */}
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
@@ -828,7 +1060,6 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                     </button>
                   </div>
                 </form>
-              )}
             </>
           )}
 
@@ -983,34 +1214,8 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                 )}
               </div>
 
-              {/* 未ログイン案内 または 業務予定入力フォーム */}
-              {!isAuthReady ? (
-                <div className="border-t border-slate-200 pt-4 bg-slate-50 p-6 rounded-lg text-center space-y-2">
-                  <div className="text-xs font-semibold text-slate-500 animate-pulse">
-                    ログイン認証状態を確認中...
-                  </div>
-                </div>
-              ) : !canEdit ? (
-                <div className="border-t border-slate-200 pt-4 bg-slate-50 p-4 rounded-lg text-center space-y-2.5">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <div className="text-xs font-bold text-slate-800">
-                    業務予定の登録・編集にはログインが必要です
-                  </div>
-                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-                    カレンダーの閲覧は可能ですが、登録・変更・削除を行うにはGoogleアカウントでログインするか、右上の管理者からログインしてください。
-                  </p>
-                  <button
-                    type="button"
-                    onClick={loginWithGoogle}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
-                  >
-                    <span>Googleアカウントでログイン</span>
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSaveTask} className="border-t border-slate-200 pt-4 space-y-3.5">
+              {/* 業務予定入力フォーム */}
+              <form onSubmit={handleSaveTask} className="border-t border-slate-200 pt-4 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-900">
                       {editingTaskId ? '業務予定の修正' : '新しい業務予定の登録'}
@@ -1144,7 +1349,6 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({
                     </button>
                   </div>
                 </form>
-              )}
             </>
           )}
         </div>

@@ -49,14 +49,15 @@ export function exportShiftsToCsv(shifts: ShiftRecord[], filenamePrefix = '早�
 }
 
 /**
- * カレンダーの配置状態（月〜日の7列マトリクス）をそのまま維持したCSVを出力
+ * カレンダーの配置状態（7列マトリクス）をそのまま維持したCSVを出力
  */
 export function exportCalendarCsv(
   calendarDays: CalendarDay[],
   year: number,
   month: number,
   includeTime = true,
-  monthNote?: string
+  monthNote?: string,
+  startOfWeek: 'sun' | 'mon' = 'sun'
 ): void {
   const lines: string[] = [];
 
@@ -65,7 +66,10 @@ export function exportCalendarCsv(
   lines.push(''); // 空行
 
   // 曜日ヘッダー
-  lines.push(WEEK_DAYS_JA.map((w) => `"${w}曜日"`).join(','));
+  const weekDayNames = startOfWeek === 'sun'
+    ? ['日', '月', '火', '水', '木', '金', '土']
+    : ['月', '火', '水', '木', '金', '土', '日'];
+  lines.push(weekDayNames.map((w) => `"${w}曜日"`).join(','));
 
   // 7日単位（週ごと）に分割して出力
   for (let i = 0; i < calendarDays.length; i += 7) {

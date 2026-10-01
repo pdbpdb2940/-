@@ -174,7 +174,7 @@ export const AdminAuditLogModal: React.FC<AdminAuditLogModalProps> = ({ isOpen, 
                     <th className="py-2 px-2 whitespace-nowrap">操作</th>
                     <th className="py-2 px-2 whitespace-nowrap">対象日</th>
                     <th className="py-2 px-3">内容要約</th>
-                    <th className="py-2 px-3 whitespace-nowrap">操作者 (Google)</th>
+                    <th className="py-2 px-3 whitespace-nowrap">操作者</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">

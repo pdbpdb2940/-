@@ -21,6 +21,7 @@ interface CsvModalProps {
   shifts: ShiftRecord[];
   calendarDays: CalendarDay[];
   monthNote?: string;
+  startOfWeek?: 'sun' | 'mon';
   onImportShifts: (newShifts: ShiftRecord[], mode: 'merge' | 'overwrite') => void;
 }
 
@@ -32,6 +33,7 @@ export const CsvModal: React.FC<CsvModalProps> = ({
   shifts,
   calendarDays,
   monthNote = '',
+  startOfWeek = 'sun',
   onImportShifts,
 }) => {
   const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
@@ -49,7 +51,7 @@ export const CsvModal: React.FC<CsvModalProps> = ({
 
   // カレンダー配置を維持したCSV出力（出勤時刻・早出担当者を週×曜日グリッドで出力）
   const handleExportCalendarLayout = () => {
-    exportCalendarCsv(calendarDays, currentYear, currentMonth, true, monthNote);
+    exportCalendarCsv(calendarDays, currentYear, currentMonth, true, monthNote, startOfWeek);
   };
 
   // 当月のCSV出力（一覧リスト形式）

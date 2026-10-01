@@ -176,9 +176,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // 苗字の更新
+  // 苗字の更新（未ログイン時でもLocalStorageへ確実に即時保存）
   const updateSurname = async (newSurname: string) => {
-    if (!user) return;
     const trimmed = newSurname.trim();
     if (!trimmed) return;
 
@@ -186,11 +185,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       localStorage.setItem(CACHED_SURNAME_KEY, trimmed);
     } catch {}
-    await saveUserProfileToCloud({
-      uid: user.uid,
-      surname: trimmed,
-      email: user.email || '',
-    });
+
+    if (user) {
+      try {
+        await saveUserProfileToCloud({
+          uid: user.uid,
+          surname: trimmed,
+          email: user.email || '',
+        });
+      } catch (e) {
+        console.warn('Failed to save surname to cloud:', e);
+      }
+    }
   };
 
   return (

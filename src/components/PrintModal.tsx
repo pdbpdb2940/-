@@ -20,6 +20,7 @@ interface PrintModalProps {
   staffList: StaffMember[];
   mergeConsecutive: boolean;
   monthNote?: string;
+  startOfWeek?: 'sun' | 'mon';
   onToggleMergeConsecutive?: () => void;
 }
 
@@ -32,6 +33,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
   staffList,
   mergeConsecutive: initialMergeConsecutive,
   monthNote = '',
+  startOfWeek = 'sun',
 }) => {
   const [mergeConsecutive, setMergeConsecutive] = useState<boolean>(initialMergeConsecutive);
   const [includeNote, setIncludeNote] = useState<boolean>(true);
@@ -52,8 +54,9 @@ export const PrintModal: React.FC<PrintModalProps> = ({
       mergeConsecutive,
       timeDisplayMode,
       monthNote: includeNote ? monthNote : '',
+      startOfWeek,
     }),
-    [year, month, calendarDays, staffList, mergeConsecutive, timeDisplayMode, includeNote, monthNote]
+    [year, month, calendarDays, staffList, mergeConsecutive, timeDisplayMode, includeNote, monthNote, startOfWeek]
   );
 
   // プレビュー用のHTML文字列

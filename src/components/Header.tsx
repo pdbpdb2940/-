@@ -17,6 +17,7 @@ import {
   Download,
   ShieldAlert,
   UserCheck,
+  Users2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,14 +25,12 @@ interface HeaderProps {
   currentYear: number;
   currentMonth: number; // 1-12
   isAdminMode: boolean;
-  isCloudSynced?: boolean;
-  totalShiftsCount?: number;
-  monthShiftsCount?: number;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onPrevYear: () => void;
   onNextYear: () => void;
   onToday: () => void;
+  onOpenRotationModal?: () => void;
   onOpenBatchModal: () => void;
   onOpenStaffManage: () => void;
   onOpenCsvModal: () => void;
@@ -41,21 +40,19 @@ interface HeaderProps {
   onOpenAdminSettings: () => void;
   onOpenShareModal: () => void;
   onOpenAuditLogs: () => void;
-  onOpenSurnameEdit: () => void;
+  onOpenSurnameEdit?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentYear,
   currentMonth,
   isAdminMode,
-  isCloudSynced = true,
-  totalShiftsCount = 0,
-  monthShiftsCount = 0,
   onPrevMonth,
   onNextMonth,
   onPrevYear,
   onNextYear,
   onToday,
+  onOpenRotationModal,
   onOpenBatchModal,
   onOpenStaffManage,
   onOpenCsvModal,
@@ -67,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuditLogs,
   onOpenSurnameEdit,
 }) => {
-  const { user, surname, loginWithGoogle, logout, isAuthReady } = useAuth();
+  const { surname } = useAuth();
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs print:hidden">
       {/* 管理者モード時のみ表示される最上部ステータスバー */}
@@ -136,15 +133,6 @@ export const Header: React.FC<HeaderProps> = ({
                     一般利用者画面
                   </span>
                 )}
-                {isCloudSynced && (
-                  <span
-                    className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-emerald-800 bg-emerald-50 border border-emerald-300 font-semibold px-2 py-0.5 rounded shadow-xs"
-                    title={`Google Cloud Firestoreとリアルタイム同期中（全登録: ${totalShiftsCount}件、当月: ${monthShiftsCount}件）`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>クラウド同期中 ({totalShiftsCount}件)</span>
-                  </span>
-                )}
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
                 担当: 神谷・紙谷・中野 ｜ 勤務時間: 7:30～16:15 ｜ 日付をクリックして早出・業務予定を登録
@@ -154,86 +142,40 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* アクションボタン群 */}
           <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
-            {/* Googleアカウントログインステータス */}
-            {!isAuthReady ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                <span>認証確認中...</span>
-              </div>
-            ) : !user ? (
+            {/* 隔週シフト設定ボタン（3名・隔週2名ペアローテーション） */}
+            {onOpenRotationModal && (
               <button
                 type="button"
-                onClick={loginWithGoogle}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs transition-colors cursor-pointer"
-                title="Googleアカウントでログインするとシフトや業務予定の登録・編集ができます"
+                onClick={onOpenRotationModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors cursor-pointer"
+                title="3名（神谷・紙谷・中野）の隔週2名ペアローテーション設定・自動反映"
               >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.02 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                  />
-                </svg>
-                <span>Googleでログイン</span>
+                <Users2 className="w-4 h-4 text-white" />
+                <span>隔週シフト設定</span>
               </button>
-            ) : (
-              <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-md text-xs font-semibold text-blue-950">
-                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
-                <span className="font-bold">{surname}でログイン中</span>
-                <button
-                  type="button"
-                  onClick={onOpenSurnameEdit}
-                  className="text-blue-700 hover:text-blue-900 p-0.5 rounded hover:bg-blue-100 transition-colors cursor-pointer"
-                  title="表示する苗字を変更する"
-                >
-                  <UserCheck className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="text-slate-500 hover:text-rose-600 p-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer ml-0.5"
-                  title="ログアウト"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
             )}
 
-            {/* 管理者モードのみ表示される管理ボタン */}
-            {isAdminMode && (
-              <>
-                <button
-                  type="button"
-                  onClick={onOpenBatchModal}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer"
-                  title="曜日や期間を指定して早出シフトをまとめて登録"
-                >
-                  <CalendarRange className="w-4 h-4" />
-                  <span>まとめて設定</span>
-                </button>
+            {/* まとめて設定ボタン（職員をまとめて時刻変更・一括登録・不在設定） */}
+            <button
+              type="button"
+              onClick={onOpenBatchModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer"
+              title="職員をまとめて時刻変更・早出シフト一括登録・不在設定"
+            >
+              <CalendarRange className="w-4 h-4" />
+              <span>まとめて設定</span>
+            </button>
 
-                <button
-                  type="button"
-                  onClick={onOpenStaffManage}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
-                  title="職員名簿の確認・追加・カラー設定"
-                >
-                  <Users className="w-4 h-4 text-slate-600" />
-                  <span>職員設定</span>
-                </button>
-              </>
-            )}
+            {/* 職員管理ボタン（全利用者利用可能） */}
+            <button
+              type="button"
+              onClick={onOpenStaffManage}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+              title="職員名簿の確認・追加・カラー設定"
+            >
+              <Users className="w-4 h-4 text-slate-600" />
+              <span>職員設定</span>
+            </button>
 
             {/* CSVボタン（管理者モードはインポート/エクスポート両用、利用者モードはカレンダーCSV保存） */}
             <button
@@ -265,6 +207,20 @@ export const Header: React.FC<HeaderProps> = ({
               <Printer className="w-4 h-4" />
               <span>印刷 (A4横)</span>
             </button>
+
+            {/* 表示姓（苗字）変更ボタン */}
+            {onOpenSurnameEdit && (
+              <button
+                type="button"
+                onClick={onOpenSurnameEdit}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+                title="カレンダー上に記録される登録者の苗字を設定・変更"
+              >
+                <UserCheck className="w-4 h-4 text-blue-600" />
+                <span className="hidden xs:inline text-slate-500 text-xs">登録者:</span>
+                <span className="font-bold text-slate-900">{surname || '苗字設定'}</span>
+              </button>
+            )}
 
             {/* 利用者画面の場合：管理者ログインボタン */}
             {!isAdminMode ? (

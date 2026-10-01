@@ -2,13 +2,14 @@ import { CalendarDay, ShiftRecord, TaskSchedule } from '../types';
 import { formatDateKey, getHolidayName } from './holidays';
 
 /**
- * 指定された年月の月間カレンダーグリッド用日付リストを生成（月曜始まり）
+ * 指定された年月の月間カレンダーグリッド用日付リストを生成（日曜始まりまたは月曜始まり）
  */
 export function buildCalendarDays(
   year: number,
   month: number, // 1-12
   shifts: ShiftRecord[],
-  tasks: TaskSchedule[] = []
+  tasks: TaskSchedule[] = [],
+  startOfWeek: 'sun' | 'mon' = 'sun'
 ): CalendarDay[] {
   const result: CalendarDay[] = [];
 
@@ -27,8 +28,9 @@ export function buildCalendarDays(
 
   // 1日の曜日 (0: 日, 1: 月, ... 6: 土)
   const firstDayOfWeek = firstDate.getDay();
-  // 月曜日始まりの場合の前月オフセット (月:0, 火:1, 水:2, 木:3, 金:4, 土:5, 日:6)
-  const prevMonthPadding = (firstDayOfWeek + 6) % 7;
+  // 前月オフセット (日曜始まり: firstDayOfWeek, 月曜始まり: (firstDayOfWeek + 6) % 7)
+  const prevMonthPadding =
+    startOfWeek === 'sun' ? firstDayOfWeek : (firstDayOfWeek + 6) % 7;
 
   // 1. 前月の末尾日を埋める
   if (prevMonthPadding > 0) {

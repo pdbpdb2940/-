@@ -10,6 +10,7 @@ export interface PrintOptions {
   mergeConsecutive: boolean;
   timeDisplayMode?: 'startTimeOnly' | 'fullRange'; // '出勤 7:30' または '7:30～16:15'
   monthNote?: string; // カレンダー下部の連絡事項・申し送りメモ
+  startOfWeek?: 'sun' | 'mon';
 }
 
 /**
@@ -25,7 +26,13 @@ export function generatePrintHtml(options: PrintOptions): string {
     mergeConsecutive,
     timeDisplayMode = 'fullRange',
     monthNote = '',
+    startOfWeek = 'sun',
   } = options;
+
+  const isSunStart = startOfWeek === 'sun';
+  const weekDayNames = isSunStart
+    ? ['日', '月', '火', '水', '木', '金', '土']
+    : ['月', '火', '水', '木', '金', '土', '日'];
 
   const allShifts = calendarDays.flatMap((d) => d.shifts);
 
@@ -66,8 +73,8 @@ export function generatePrintHtml(options: PrintOptions): string {
 
     // 日付ヘッダーセル
     const dateHeaders = weekDays.map((day, colIdx) => {
-      const isSun = colIdx === 6;
-      const isSat = colIdx === 5;
+      const isSun = isSunStart ? colIdx === 0 : colIdx === 6;
+      const isSat = isSunStart ? colIdx === 6 : colIdx === 5;
       const isSunOrHoliday = isSun || Boolean(day.holidayName);
 
       let dateColor = '#0f172a';
@@ -188,11 +195,20 @@ export function generatePrintHtml(options: PrintOptions): string {
 
         <!-- 7カラム縦境界線用背景 -->
         <div style="position: absolute; top: 22px; bottom: 0; left: 0; right: 0; display: flex; pointer-events: none;">
-          ${weekDays.map((d, cIdx) => `
-            <div style="flex: 1; border-right: 1px solid #cbd5e1; background: ${
-              !d.isCurrentMonth ? '#fafafa' : cIdx === 6 ? '#fff1f2' : cIdx === 5 ? '#eff6ff' : '#ffffff'
-            };"></div>
-          `).join('')}
+          ${weekDays.map((d, cIdx) => {
+            const isColSun = isSunStart ? cIdx === 0 : cIdx === 6;
+            const isColSat = isSunStart ? cIdx === 6 : cIdx === 5;
+            const bgCol = !d.isCurrentMonth
+              ? '#fafafa'
+              : isColSun
+              ? '#fff1f2'
+              : isColSat
+              ? '#eff6ff'
+              : '#ffffff';
+            return `
+              <div style="flex: 1; border-right: 1px solid #cbd5e1; background: ${bgCol};"></div>
+            `;
+          }).join('')}
         </div>
 
         <!-- シフトバースペース -->
@@ -204,9 +220,9 @@ export function generatePrintHtml(options: PrintOptions): string {
   }).join('');
 
   // 曜日ヘッダー
-  const weekDayHeaderHtml = WEEK_DAYS_JA.map((w, idx) => {
-    const isSat = idx === 5;
-    const isSun = idx === 6;
+  const weekDayHeaderHtml = weekDayNames.map((w, idx) => {
+    const isSun = isSunStart ? idx === 0 : idx === 6;
+    const isSat = isSunStart ? idx === 6 : idx === 5;
     const color = isSun ? '#dc2626' : isSat ? '#2563eb' : '#0f172a';
     const bg = isSun ? '#fee2e2' : isSat ? '#dbeafe' : '#f1f5f9';
     return `
